@@ -16,19 +16,33 @@ interface GolflinObj
 
 class GolflinNumber(val number: Double) : GolflinObj {
     override fun toString() = if (number.toInt().toDouble() == number) number.toInt().toString() else number.toString()
+    override fun equals(other: Any?) = (other as? GolflinNumber)?.number == number
+    override fun hashCode() = number.hashCode()
 }
 
 class GolflinChar(val char: Char) : GolflinObj {
     override fun toString() = "'$char'"
+    override fun equals(other: Any?) = (other as? GolflinChar)?.char == char
+    override fun hashCode() = char.hashCode()
 }
 
 class GolflinString(val string: String) :
     GolflinList(string.toList().map { GolflinChar(it) }.toGolflinObject() as GolflinList) {
-    override fun toString() = "\"$string\""
+    override fun toString() = string
+    override fun equals(other: Any?) =
+        ((other as? GolflinString)?.string ?: (other as? GolflinChar)?.char?.toString()) == string
+
+    override fun hashCode(): Int {
+        var result = super.hashCode()
+        result = 31 * result + string.hashCode()
+        return result
+    }
+
 }
 
-open class GolflinList(temp: MutableList<GolflinObj> = mutableListOf(),
-                       val list: CopyOnWriteArrayList<GolflinObj> = CopyOnWriteArrayList(temp)
+open class GolflinList(
+    temp: List<GolflinObj> = mutableListOf(),
+    val list: CopyOnWriteArrayList<GolflinObj> = CopyOnWriteArrayList(temp)
 ) :
     GolflinObj, ArrayList<GolflinObj>(list) {
     override fun toString() = list.toString()
@@ -50,18 +64,24 @@ class GolflinSequence<T>(val sequence: Sequence<T>) : GolflinObj {
 
 class GolflinReturnObj(val code: Int) : GolflinObj {
     override fun toString() = code.toString()
+    override fun equals(other: Any?) = (other as? GolflinReturnObj)?.code == code
+    override fun hashCode() = code
 }
 
 class GolflinBoolean(val boolean: Boolean) : GolflinObj {
     override fun toString() = boolean.toString()
+    override fun equals(other: Any?) = (other as? GolflinBoolean)?.boolean == boolean
+    override fun hashCode() = boolean.hashCode()
 }
 
 class GolflinNull : GolflinObj {
-    companion object{
+    companion object {
         val gNull = GolflinNull()
     }
 
     override fun toString() = ""
+    override fun equals(other: Any?) = other is GolflinNull
+    override fun hashCode() = javaClass.hashCode()
 }
 
 class StrictDiadicIndicator : GolflinObj

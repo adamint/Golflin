@@ -129,10 +129,12 @@ class Subtract(interpreter: GolflinVM) : Link("-", interpreter, diadic = true, s
         val arg1 = argument[0]
         val arg2 = argument[1]
 
-        return if (arg1 is GolflinList) arg1.toMutableList().apply { removeIf { it == arg2 } }.toGolflinObject()
-        else if (arg1 is GolflinString) GolflinString(arg1.string.removeSuffix(arg2.toString()))
-        else if (arg1 is GolflinNumber && arg2 is GolflinNumber) subtract(arg1, arg2)
-        else throw IllegalArgumentException()
+        return when {
+            arg1 is GolflinList -> arg1.toMutableList().apply { removeIf { it == arg2 } }.toGolflinObject()
+            arg1 is GolflinString -> GolflinString(arg1.string.removeSuffix(arg2.toString()))
+            arg1 is GolflinNumber && arg2 is GolflinNumber -> subtract(arg1, arg2)
+            else -> throw IllegalArgumentException()
+        }
     }
 }
 
@@ -251,7 +253,6 @@ class False(interpreter: GolflinVM) : Link(":", interpreter, diadic = true) {
 }
 
 
-
 class GreaterThan(interpreter: GolflinVM) : Link("≥", interpreter, strictDiadicIdentifier = ">") {
     override fun evaluate(argument: GolflinObj?, context: GolflinObj, register: MutableList<GolflinObj>): GolflinObj {
         argument as GolflinList
@@ -315,10 +316,36 @@ class GetRegister5(interpreter: GolflinVM) : Link("e", interpreter) {
     }
 }
 
-class SaveToRegister(interpreter: GolflinVM) : Link("s", interpreter) {
+class SaveToRegister(interpreter: GolflinVM) : Link("*", interpreter) {
     override fun evaluate(argument: GolflinObj?, context: GolflinObj, register: MutableList<GolflinObj>): GolflinObj {
         register.add((argument as? GolflinList)?.last() ?: argument!!)
         return register.toGolflinObject()
+    }
+}
+
+class Split(interpreter: GolflinVM) : Link("s", interpreter, diadic = true) {
+    override fun evaluate(argument: GolflinObj?, context: GolflinObj, register: MutableList<GolflinObj>): GolflinObj {
+        argument as GolflinList
+        val toSplit = argument[0]
+        val splitParam = argument[1]
+
+        when (toSplit) {
+            is GolflinString -> return toSplit.string.split((splitParam as GolflinString).string)
+                .map { it.toGolflinObject() }.toGolflinObject()
+            is GolflinList -> {
+                val indices = toSplit.list.indices.filter { toSplit[it] == splitParam }
+                return if (indices.isEmpty()) toSplit
+                else GolflinList(indices.mapIndexed { index, i ->
+                    toSplit.subList(indices.getOrNull(index - 1) ?: 0, i)
+                        .toGolflinObject()
+                }.toMutableList().apply {
+                    if (indices.last() != toSplit.lastIndex) add(
+                        toSplit.subList(toSplit.lastIndex, toSplit.size).toGolflinObject()
+                    )
+                }.filter { it !is GolflinList || it.isNotEmpty() })
+            }
+            else -> throw IllegalArgumentException()
+        }
     }
 }
 

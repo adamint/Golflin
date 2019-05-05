@@ -196,7 +196,8 @@ val links: (GolflinVM) -> List<Link> = { i: GolflinVM ->
         False(i),
         GolflinContextVar(i),
         If(i),
-        FilterMapIndex(i)
+        FilterMapIndex(i),
+        Split(i)
     )
 }
 
